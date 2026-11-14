@@ -2,6 +2,10 @@
 
 **Autora: Marymar Danytza Calloticona Chambilla**
 
+[Published article on DEV.to](https://dev.to/marymar_danytzacallotico/ingenieria-de-datos-con-dbt-y-duckdb-de-csv-crudos-a-un-producto-de-datos-publico-1j0g) · [Public data product](https://mary010-sky.github.io/data-engineering-dbt/) · [dbt documentation](https://mary010-sky.github.io/data-engineering-dbt/dbt/) · [Successful pipeline and deployment](https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473)
+
+Verified on 2026-11-14: **26/26 dbt data tests**, 1,006 input events, 1,000 accepted orders, six retained events and **USD 154,075.00** revenue, reconciled independently in Python. The public app and `fct_orders` documentation were checked in a browser; the February filter returned 28 daily rows.
+
 An executable batch data engineering solution: deterministic CSV ingestion, typed staging, dimensional validation, latest-event deduplication, quarantine, silver facts, gold aggregates, automated quality tests and public documentation/output delivery. No AWS account or service is configured or required.
 
 ## Public application

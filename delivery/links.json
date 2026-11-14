@@ -1,0 +1,16 @@
+{
+  "activity": "Data Engineering — U2",
+  "author": "Marymar Danytza Calloticona Chambilla",
+  "article": "https://dev.to/marymar_danytzacallotico/ingenieria-de-datos-con-dbt-y-duckdb-de-csv-crudos-a-un-producto-de-datos-publico-1j0g",
+  "repository": "https://github.com/mary010-sky/data-engineering-dbt",
+  "application": "https://mary010-sky.github.io/data-engineering-dbt/",
+  "dbt_documentation": "https://mary010-sky.github.io/data-engineering-dbt/dbt/",
+  "successful_deployment": "https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473",
+  "verified_application_commit": "ec3bc20c5115a07b647ea0eee863208c9293475b",
+  "verified_on": "2026-11-14",
+  "video": null,
+  "video_status": "Pending: Marymar will record and publish a public video of at most five minutes, as requested.",
+  "telegram_status": "Pending: Marymar will send article and video links to her Telegram group.",
+  "assignment_upload_status": "ZIP prepared locally; no assignment-page upload performed.",
+  "complete_submission": false
+}

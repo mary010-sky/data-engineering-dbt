@@ -1,0 +1,23 @@
+Actividad Grupal U2: Data Engineering
+Estudiante: Marymar Danytza Calloticona Chambilla
+
+ARTICULO PUBLICADO:
+https://dev.to/marymar_danytzacallotico/ingenieria-de-datos-con-dbt-y-duckdb-de-csv-crudos-a-un-producto-de-datos-publico-1j0g
+
+REPOSITORIO PUBLICO:
+https://github.com/mary010-sky/data-engineering-dbt
+
+APLICACION PUBLICA:
+https://mary010-sky.github.io/data-engineering-dbt/
+
+DOCUMENTACION DBT Y LINAJE:
+https://mary010-sky.github.io/data-engineering-dbt/dbt/
+
+DESPLIEGUE AUTOMATIZADO EXITOSO:
+https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473
+
+VIDEO PUBLICO (MAXIMO CINCO MINUTOS):
+PENDIENTE. Agregar la URL cuando Marymar publique su video.
+
+TELEGRAM:
+Pendiente de envio por Marymar con los enlaces del articulo y del video.

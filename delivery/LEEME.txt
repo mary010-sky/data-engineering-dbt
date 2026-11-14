@@ -1,0 +1,18 @@
+Data Engineering — dbt + DuckDB
+Marymar Danytza Calloticona Chambilla
+
+Completado y verificado el 14 de noviembre de 2026:
+- Codigo en repositorio publico.
+- Pipeline automatizado ejecutado correctamente en GitHub Actions.
+- 26 pruebas dbt correctas; 1000 ordenes aceptadas y 6 eventos retenidos de 1006 eventos.
+- Ingreso USD 154075.00 conciliado con un calculo independiente en centavos.
+- Aplicacion y documentacion dbt publicadas en GitHub Pages.
+- Articulo publicado en DEV.to con el nombre completo de Marymar.
+
+Pendientes a cargo de Marymar, por su indicacion:
+1. Grabar y publicar el video, con duracion maxima de cinco minutos. Guion en docs/video-script.md del repositorio.
+2. Agregar su URL publica a ENLACES.txt y al campo video de links.json. Volver a comprimir los archivos.
+3. Enviar articulo y video al grupo de Telegram.
+4. Subir el ZIP actualizado en la tarea correspondiente.
+
+Este ZIP aun no contiene el enlace del video. No se ha realizado un envio a Telegram ni una entrega en el aula virtual.

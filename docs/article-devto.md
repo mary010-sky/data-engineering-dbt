@@ -1,6 +1,6 @@
 ---
 title: "Ingeniería de datos con dbt y DuckDB: de CSV crudos a un producto de datos público"
-published: false
+published: true
 tags: dataengineering, dbt, python, devops
 ---
 
@@ -98,6 +98,8 @@ Además, Python vuelve a leer los CSV, aplica la política documentada y calcula
 
 `scripts/export_site.py` solo exporta cuando todas las pruebas registradas en `run_results.json` pasan y la conciliación independiente coincide. La evidencia queda en `evidence/pipeline-validation.json`.
 
+En la ejecución local pasaron las **26 pruebas de datos** y los 34 recursos procesados por `dbt build`. Las 1.000 órdenes aceptadas sumaron **USD 154.075,00**, iguales a los **15.407.500 centavos** calculados de forma independiente. Los seis eventos retenidos quedaron disponibles para auditoría. Estos importes pertenecen al conjunto sintético del laboratorio.
+
 ## 7. Linaje y documentación como resultados del pipeline
 
 Cada `ref()` declara una dependencia entre modelos. dbt usa esas referencias para construir el grafo y ejecutar los recursos en el orden correcto. Después, `dbt docs generate` crea la documentación de las tablas, sus columnas y dependencias.
@@ -127,6 +129,11 @@ Para evolucionarla, incorporaría una fuente externa, reglas de calidad vinculad
 
 **Autora: Marymar Danytza Calloticona Chambilla.**
 
-Los enlaces al repositorio público, al producto de datos y a la ejecución automatizada se incorporarán una vez verificados.
+- [Repositorio público con modelos, pruebas y automatización](https://github.com/mary010-sky/data-engineering-dbt)
+- [Producto de datos público](https://mary010-sky.github.io/data-engineering-dbt/)
+- [Documentación de dbt y linaje](https://mary010-sky.github.io/data-engineering-dbt/dbt/)
+- [Ejecución automatizada exitosa](https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473)
+
+La ejecución en GitHub Actions terminó correctamente: el pipeline y el despliegue pasaron. La aplicación pública mostró las 26 pruebas correctas, 1.000 órdenes aceptadas y USD 154.075,00 de ingreso validado. El filtro de febrero mostró 28 fechas del snapshot publicado.
 
 Este artículo y el código se prepararon con asistencia de IA y comprobaciones de ejecución.

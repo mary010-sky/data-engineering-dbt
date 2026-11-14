@@ -1,0 +1,25 @@
+name: retail_engineering
+version: '1.0.0'
+config-version: 2
+profile: retail_engineering
+model-paths: [models]
+seed-paths: [seeds]
+test-paths: [tests]
+clean-targets: [target, logs]
+models:
+  retail_engineering:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+seeds:
+  retail_engineering:
+    raw_orders:
+      +column_types:
+        order_id: varchar
+        order_date: varchar
+        customer_id: varchar
+        product_id: varchar
+        quantity: varchar
+        unit_price: varchar
+        event_id: integer

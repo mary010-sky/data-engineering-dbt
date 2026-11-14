@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "input_events": 1006,
+  "accepted_orders": 1000,
+  "quarantined_events": 6,
+  "invalid_events": 5,
+  "superseded_events": 1,
+  "revenue_usd": "154075.00",
+  "independent_expected_cents": 15407500,
+  "dbt_tests": 26,
+  "dbt_tests_passed": 26,
+  "dbt_nodes": 34,
+  "duckdb_version": "1.4.3",
+  "generated_at": "2026-11-14T17:54:57.280569+00:00"
+}

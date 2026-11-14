@@ -1,0 +1,10 @@
+const el=id=>document.getElementById(id);
+const money=n=>Number(n).toLocaleString('en-US',{style:'currency',currency:'USD'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function table(rows,columns){return '<table><thead><tr>'+columns.map(([k,label])=>'<th>'+esc(label)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+columns.map(([k,label])=>'<td>'+esc(k==='revenue'?money(r[k]):r[k])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';}
+fetch('data/pipeline.json').then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(data=>{
+ const v=data.validation;el('status').textContent=v.status==='passed'?'PIPELINE VERIFICADO':'REVISAR PIPELINE';el('input').textContent=v.input_events.toLocaleString('en-US');el('accepted').textContent=v.accepted_orders.toLocaleString('en-US');el('quarantined').textContent=v.quarantined_events;el('tests').textContent=v.dbt_tests_passed+' / '+v.dbt_tests;el('revenue').textContent=money(v.revenue_usd);el('generated').textContent='Build UTC: '+v.generated_at.replace('T',' ').slice(0,19);
+ const max=Math.max(...data.markets.map(r=>Number(r.revenue)));el('bars').innerHTML=data.markets.map(r=>'<div class="bar"><div class="barlabel"><span>'+esc(r.market)+'</span><span>'+money(r.revenue)+'</span></div><div class="track"><div class="fill" style="width:'+Number(r.revenue)/max*100+'%"></div></div></div>').join('');
+ el('quarantine').innerHTML=table(data.quarantine,[['event_id','Evento'],['order_id','Orden'],['disposition','Motivo']]);
+ const render=()=>{const period=el('period').value;const rows=data.daily.filter(r=>period==='all'||r.order_date.startsWith(period));el('daily').innerHTML=table(rows,[['order_date','Fecha'],['orders','Órdenes'],['units','Unidades'],['revenue','Ingresos USD']]);};el('period').onchange=render;render();
+}).catch(e=>{el('status').textContent='NO SE PUDO CARGAR';el('error').textContent='No se pudo leer la salida del pipeline: '+e.message;});

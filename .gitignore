@@ -1,0 +1,8 @@
+.venv/
+target/
+logs/
+warehouse/
+site/data/
+site/dbt/
+__pycache__/
+.user.yml

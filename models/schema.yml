@@ -1,0 +1,63 @@
+version: 2
+seeds:
+  - name: customers
+    description: Synthetic customer dimension; 20 public example identifiers.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: market
+        data_tests: [not_null]
+  - name: products
+    description: Twelve synthetic products across three categories.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: raw_orders
+    description: Bronze event log with 1006 events and deliberate quality defects.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+models:
+  - name: stg_order_events
+    description: Parse types, validate dimensions, rank events and assign a disposition. Latest event wins; if invalid, the order is quarantined rather than falling back silently.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: disposition
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [accepted, invalid_date, invalid_quantity, invalid_price, unknown_customer, unknown_product, superseded_event, missing_order_id]
+  - name: fct_orders
+    description: Silver layer, one latest valid event per order, decimal USD revenue.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: order_date
+        data_tests: [not_null]
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments: {to: "ref('customers')", field: customer_id}
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments: {to: "ref('products')", field: product_id}
+      - name: revenue
+        data_tests: [not_null]
+  - name: quarantine
+    description: Invalid and superseded events retained for auditing; no silent data loss.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+  - name: daily_sales
+    description: Gold daily orders, units and revenue; reconciles to the silver layer.
+    columns:
+      - name: order_date
+        data_tests: [unique, not_null]
+  - name: market_sales
+    description: Gold totals for each market.
+    columns:
+      - name: market
+        data_tests: [unique, not_null]

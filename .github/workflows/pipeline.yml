@@ -1,0 +1,49 @@
+name: Build data pipeline and publish
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+env:
+  DBT_PROFILES_DIR: .
+  DBT_SEND_ANONYMOUS_USAGE_STATS: 'false'
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-lock.txt
+      - run: python scripts/generate_data.py
+      - run: dbt build
+      - run: python scripts/export_site.py
+      - run: dbt docs generate
+      - run: python scripts/package_docs.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-evidence
+          path: |
+            target/run_results.json
+            target/manifest.json
+            evidence/pipeline-validation.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+  deploy:
+    needs: pipeline
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - id: publish
+        uses: actions/deploy-pages@v4

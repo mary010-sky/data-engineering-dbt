@@ -1,0 +1,8 @@
+retail_engineering:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: warehouse/retail.duckdb
+      schema: main
+      threads: 2

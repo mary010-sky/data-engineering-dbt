@@ -1,7 +1,8 @@
 Actividad Grupal U2: Data Engineering
 Estudiante: Marymar Danytza Calloticona Chambilla
 
-ARTICULO PUBLICADO:
+ARTICULO PUBLICADO EN INGLES (actualizado el 18 de noviembre de 2026):
+Data Engineering with dbt and DuckDB: From Raw CSVs to a Public Data Product
 https://dev.to/marymar_danytzacallotico/ingenieria-de-datos-con-dbt-y-duckdb-de-csv-crudos-a-un-producto-de-datos-publico-1j0g
 
 REPOSITORIO PUBLICO:

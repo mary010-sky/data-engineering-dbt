@@ -1,50 +1,50 @@
 ---
-title: "Ingeniería de datos con dbt y DuckDB: de CSV crudos a un producto de datos público"
+title: "Data Engineering with dbt and DuckDB: From Raw CSVs to a Public Data Product"
 published: true
 tags: dataengineering, dbt, python, devops
 ---
 
-**Autora: Marymar Danytza Calloticona Chambilla**
+**Author: Marymar Danytza Calloticona Chambilla**
 
-En este proyecto construí **Data Foundry**, una solución de ingeniería de datos por lotes que convierte eventos de ventas en tablas confiables y resultados públicos. Utilicé dbt para organizar las transformaciones y las pruebas, DuckDB como almacén local y GitHub Actions para ejecutar el proceso y desplegar sus resultados en GitHub Pages. No configuré servicios ni una cuenta AWS.
+In this project, I built **Data Foundry**, a batch data engineering solution that turns sales events into reliable tables and publicly accessible results. I used dbt to organize transformations and tests, DuckDB as a local warehouse, and GitHub Actions to run the pipeline and deploy its outputs to GitHub Pages. I did not configure an AWS account or any AWS services.
 
-Mi objetivo fue demostrar algo más que una consulta sobre un CSV: ingestión reproducible, reglas de calidad explícitas, deduplicación, trazabilidad, pruebas y entrega automatizada de un producto de datos.
+My goal was to demonstrate more than a query against a CSV file: reproducible ingestion, explicit data quality rules, deduplication, traceability, testing, and automated delivery of a data product.
 
-## 1. El problema: los datos llegan con defectos
+## 1. The problem: incoming data contains defects
 
-El generador produce **1.006 eventos sintéticos**, junto con dimensiones de clientes y productos. Hay 1.000 órdenes únicas válidas, una versión repetida de una orden y cinco eventos con problemas intencionales: una fecha imposible de interpretar, una cantidad negativa, un precio vacío, un cliente inexistente y un producto inexistente.
+The generator produces **1,006 synthetic events**, along with customer and product dimensions. The dataset contains 1,000 valid unique orders, a repeated version of one order, and five deliberately invalid events: an unparseable date, a negative quantity, an empty price, an unknown customer, and an unknown product.
 
-Los datos no representan personas ni ventas reales. Introducir defectos conocidos permite demostrar qué hace el pipeline con ellos. No basta con borrar las filas problemáticas: quiero saber cuántas llegaron, cuántas se aceptaron y por qué se retuvo cada una.
+These records do not represent real people or sales. Introducing known defects makes it possible to demonstrate how the pipeline handles them. Simply deleting problematic rows is insufficient: I want to know how many events arrived, how many were accepted, and why each retained event was set aside.
 
-## 2. Arquitectura: bronze, silver y gold
+## 2. Architecture: bronze, silver, and gold
 
 ```text
-CSV sintéticos + dimensiones
+Synthetic CSVs + dimensions
         ↓ dbt seed
 BRONZE: raw_orders, customers, products
-        ↓ tipado + validación + ranking de versiones
+        ↓ type conversion + validation + version ranking
 STAGING: stg_order_events
         ├── SILVER: fct_orders
-        └── AUDITORÍA: quarantine
+        └── AUDIT: quarantine
                   ↓
 GOLD: daily_sales, market_sales
-        ↓ pruebas dbt + conciliación Python
-JSON / CSV / documentación dbt
+        ↓ dbt tests + Python reconciliation
+JSON / CSV / dbt documentation
         ↓ GitHub Actions
-GitHub Pages: producto de datos público
+GitHub Pages: public data product
 ```
 
-DuckDB se ejecuta durante la construcción del pipeline. El sitio publicado sirve un snapshot de los resultados: no ofrece una base compartida ni ejecuta dbt en el navegador.
+DuckDB runs while the pipeline is being built. The published website serves a snapshot of its outputs; it does not provide a shared database or run dbt in the browser.
 
-## 3. Ingesta reproducible con seeds
+## 3. Reproducible ingestion with seeds
 
-El script `scripts/generate_data.py` genera los mismos archivos en cada ejecución. `dbt seed` carga esos CSV como tablas. Las dimensiones pequeñas funcionan bien como seeds en un laboratorio; en producción utilizaría un proceso de ingesta y fuentes apropiadas para el origen real de los datos.
+The `scripts/generate_data.py` script generates the same input files on every run. `dbt seed` loads those CSV files as tables. Small dimensions work well as seeds in a lab; for production, I would use an ingestion process and source definitions appropriate to the actual data origin.
 
-La [documentación de dbt seed](https://docs.getdbt.com/reference/commands/seed) explica este mecanismo de carga. En el proyecto fijo los campos originales de la orden como texto para que el staging pueda identificar los errores de conversión de manera controlada.
+The [dbt seed documentation](https://docs.getdbt.com/reference/commands/seed) describes this loading mechanism. In this project, I explicitly type the original order fields as text so staging can identify conversion failures in a controlled way.
 
-## 4. Transformar sin ocultar los errores
+## 4. Transforming data without hiding errors
 
-El modelo `stg_order_events` elimina espacios y usa `try_cast` para interpretar fechas, cantidades y precios. Una conversión inválida devuelve un valor nulo, que la regla de calidad clasifica con un motivo.
+The `stg_order_events` model trims whitespace and uses `try_cast` to parse dates, quantities, and prices. An invalid conversion produces a null value, which the quality rules classify with an explicit reason.
 
 ```sql
 select
@@ -55,9 +55,9 @@ select
 from {{ ref('raw_orders') }}
 ```
 
-También verifica las claves contra las dimensiones. Los registros reciben estados como `invalid_date`, `invalid_quantity`, `invalid_price`, `unknown_customer` o `unknown_product`.
+The model also checks keys against the dimensions. Records receive statuses such as `invalid_date`, `invalid_quantity`, `invalid_price`, `unknown_customer`, or `unknown_product`.
 
-Para las versiones de una orden, la política es que el mayor `event_id` gana:
+For multiple versions of an order, the policy is that the highest `event_id` wins:
 
 ```sql
 row_number() over (
@@ -66,26 +66,26 @@ row_number() over (
 ) as event_rank
 ```
 
-Si la última versión es inválida, se retiene en cuarentena y no se recupera silenciosamente una versión anterior. En este ejemplo los identificadores de evento son únicos; en un origen real también necesitaría definir cómo resolver empates y eventos fuera de orden.
+If the latest version is invalid, it is quarantined rather than silently falling back to an earlier version. Event identifiers are unique in this example; a real source would also require policies for ties and out-of-order events.
 
-## 5. Conservar una salida auditable
+## 5. Preserving auditable outputs
 
-`fct_orders` contiene solo la última versión aceptada de cada orden. Calcula ingresos con decimales y agrega el mercado y la categoría desde las dimensiones.
+`fct_orders` contains only the latest accepted version of each order. It calculates revenue with decimal arithmetic and adds the market and category from the dimensions.
 
-`quarantine` conserva los eventos inválidos y las versiones anteriores. Una versión reemplazada se identifica como `superseded_event`, que se distingue de un error de calidad. Así puedo reconciliar el volumen:
+`quarantine` preserves invalid events and earlier versions. A replaced version is labeled `superseded_event`, which distinguishes it from a data quality error. This allows the event counts to reconcile:
 
 ```text
-1.006 eventos = 1.000 órdenes aceptadas + 6 eventos retenidos
-6 retenidos = 5 inválidos + 1 versión reemplazada
+1,006 events = 1,000 accepted orders + 6 retained events
+6 retained events = 5 invalid events + 1 superseded version
 ```
 
-Las tablas gold `daily_sales` y `market_sales` resumen órdenes, unidades e ingresos. USD es una unidad común para el ejemplo; no realizo conversiones monetarias.
+The gold tables, `daily_sales` and `market_sales`, summarize orders, units, and revenue. USD is the common unit used for the example; no currency conversion is performed.
 
-## 6. Las pruebas forman parte de la construcción
+## 6. Testing is part of the build
 
-Las pruebas de dbt verifican claves únicas y no nulas, referencias a dimensiones, estados permitidos y medidas válidas. Dos pruebas SQL adicionales comprueban que ningún evento desaparezca y que los ingresos de las tablas gold concilien con la tabla silver.
+dbt tests check unique and non-null keys, dimension relationships, allowed statuses, and valid measures. Additional SQL tests verify that no events disappear and that gold revenue totals reconcile with the silver table.
 
-Una prueba singular de dbt devuelve las filas que violan la regla. Si devuelve una fila, falla:
+A singular dbt test returns the rows that violate its rule. If it returns a row, the test fails:
 
 ```sql
 select 'unaccounted_events' as failure
@@ -94,46 +94,46 @@ where (select count(*) from {{ ref('raw_orders') }}) !=
       (select count(*) from {{ ref('quarantine') }})
 ```
 
-Además, Python vuelve a leer los CSV, aplica la política documentada y calcula el ingreso esperado de forma independiente en centavos. Lo compara con la suma decimal de DuckDB. Esto ayuda a evitar que dos tablas concilien entre sí aunque ambas compartan un mismo error de transformación.
+Python also rereads the CSV files, applies the documented policy, and independently calculates expected revenue in cents. It compares that result with DuckDB's decimal sum. This helps catch cases where two tables agree with each other because both share the same transformation error.
 
-`scripts/export_site.py` solo exporta cuando todas las pruebas registradas en `run_results.json` pasan y la conciliación independiente coincide. La evidencia queda en `evidence/pipeline-validation.json`.
+`scripts/export_site.py` exports outputs only when all tests recorded in `run_results.json` pass and the independent reconciliation agrees. The evidence is saved in `evidence/pipeline-validation.json`.
 
-En la ejecución local pasaron las **26 pruebas de datos** y los 34 recursos procesados por `dbt build`. Las 1.000 órdenes aceptadas sumaron **USD 154.075,00**, iguales a los **15.407.500 centavos** calculados de forma independiente. Los seis eventos retenidos quedaron disponibles para auditoría. Estos importes pertenecen al conjunto sintético del laboratorio.
+In the local execution, all **26 data tests** passed, along with all 34 resources processed by `dbt build`. The 1,000 accepted orders totaled **USD 154,075.00**, matching the independently calculated **15,407,500 cents**. The six retained events remained available for auditing. These amounts belong to the lab's synthetic dataset.
 
-## 7. Linaje y documentación como resultados del pipeline
+## 7. Lineage and documentation as pipeline outputs
 
-Cada `ref()` declara una dependencia entre modelos. dbt usa esas referencias para construir el grafo y ejecutar los recursos en el orden correcto. Después, `dbt docs generate` crea la documentación de las tablas, sus columnas y dependencias.
+Each `ref()` declares a dependency between models. dbt uses these references to build its graph and execute resources in the correct order. Afterward, `dbt docs generate` creates documentation for the tables, columns, and dependencies.
 
-Publico esa documentación junto con un pequeño dashboard y archivos CSV/JSON. El dashboard permite revisar volúmenes, ingresos por mercado, motivos de cuarentena y resultados por mes. Los datos mostrados provienen de una ejecución real del pipeline, no de indicadores escritos a mano en el HTML.
+I publish that documentation alongside a small dashboard and CSV/JSON files. The dashboard lets readers inspect record counts, revenue by market, quarantine reasons, and daily results filtered by month. Its displayed values come from an actual pipeline execution rather than manually entered HTML metrics.
 
-## 8. Automatizar ejecución y publicación
+## 8. Automating execution and publication
 
-El workflow se activa con un push a `main` o una ejecución manual. Sus pasos son:
+The workflow starts on a push to `main` or a manual run. Its steps are:
 
-1. Instalar el entorno Python con versiones registradas.
-2. Generar los datos e ingresar los seeds.
-3. Ejecutar `dbt build`, que procesa recursos y pruebas según el grafo.
-4. Conciliar los ingresos y exportar las salidas públicas.
-5. Generar y empaquetar la documentación de dbt.
-6. Guardar artefactos de evidencia y desplegar el sitio en GitHub Pages.
+1. Install the Python environment using recorded package versions.
+2. Generate the input data.
+3. Run `dbt build`, which loads seeds and processes models and tests according to the dependency graph.
+4. Reconcile revenue and export the public outputs.
+5. Generate and package the dbt documentation.
+6. Save evidence artifacts and deploy the website to GitHub Pages.
 
-El job de despliegue depende de que termine correctamente el pipeline. Una prueba fallida impide publicar la nueva versión. GitHub Pages se configura con la fuente **GitHub Actions**; el workflow utiliza un token temporal y no necesita una clave de otro proveedor de nube.
+The deployment job depends on the successful completion of the pipeline. A failed test prevents the new version from being published. GitHub Pages uses **GitHub Actions** as its source; the workflow relies on a short-lived token and does not need an API key for another cloud provider.
 
-El repositorio incluye el código y la configuración para reproducir el proceso. La [referencia de dbt build](https://docs.getdbt.com/reference/commands/build) y la [guía de workflows de Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) describen los mecanismos utilizados.
+The repository includes the code and configuration needed to reproduce the process. The [dbt build reference](https://docs.getdbt.com/reference/commands/build) and [Pages workflow guide](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) describe the mechanisms used.
 
-## 9. Límites y siguientes pasos
+## 9. Limitations and next steps
 
-Esta solución muestra ingeniería de datos por lotes a pequeña escala. No implementa streaming, CDC, cargas incrementales ni un almacén persistente en la nube. El archivo DuckDB se reconstruye en el runner y el sitio sirve sus resultados exportados.
+This solution demonstrates small-scale batch data engineering. It does not implement streaming, change data capture, incremental loading, or a persistent cloud warehouse. The DuckDB file is rebuilt on the CI runner, and the website serves its exported outputs.
 
-Para evolucionarla, incorporaría una fuente externa, reglas de calidad vinculadas con el negocio y una estrategia de persistencia. Mantendría las comprobaciones de conservación de eventos y conciliación de ingresos para detectar regresiones.
+To extend it, I would add an external source, business-specific quality rules, and a persistence strategy. I would retain the event conservation and revenue reconciliation checks to detect regressions.
 
-**Autora: Marymar Danytza Calloticona Chambilla.**
+**Author: Marymar Danytza Calloticona Chambilla.**
 
-- [Repositorio público con modelos, pruebas y automatización](https://github.com/mary010-sky/data-engineering-dbt)
-- [Producto de datos público](https://mary010-sky.github.io/data-engineering-dbt/)
-- [Documentación de dbt y linaje](https://mary010-sky.github.io/data-engineering-dbt/dbt/)
-- [Ejecución automatizada exitosa](https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473)
+- [Public repository with models, tests, and automation](https://github.com/mary010-sky/data-engineering-dbt)
+- [Public data product](https://mary010-sky.github.io/data-engineering-dbt/)
+- [dbt documentation and lineage](https://mary010-sky.github.io/data-engineering-dbt/dbt/)
+- [Successful automated execution](https://github.com/mary010-sky/data-engineering-dbt/actions/runs/43623819473)
 
-La ejecución en GitHub Actions terminó correctamente: el pipeline y el despliegue pasaron. La aplicación pública mostró las 26 pruebas correctas, 1.000 órdenes aceptadas y USD 154.075,00 de ingreso validado. El filtro de febrero mostró 28 fechas del snapshot publicado.
+The GitHub Actions execution completed successfully: both the pipeline and deployment passed. The public application showed all 26 tests passing, 1,000 accepted orders, and USD 154,075.00 in validated revenue. Its February filter returned 28 dates from the published snapshot.
 
-Este artículo y el código se prepararon con asistencia de IA y comprobaciones de ejecución.
+This article and its code were prepared with AI assistance and execution checks.

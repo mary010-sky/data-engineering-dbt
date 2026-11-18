@@ -1,6 +1,9 @@
 {
   "activity": "Data Engineering — U2",
   "author": "Marymar Danytza Calloticona Chambilla",
+  "article_language": "en",
+  "article_title": "Data Engineering with dbt and DuckDB: From Raw CSVs to a Public Data Product",
+  "article_language_verified_on": "2026-11-18",
   "article": "https://dev.to/marymar_danytzacallotico/ingenieria-de-datos-con-dbt-y-duckdb-de-csv-crudos-a-un-producto-de-datos-publico-1j0g",
   "repository": "https://github.com/mary010-sky/data-engineering-dbt",
   "application": "https://mary010-sky.github.io/data-engineering-dbt/",
